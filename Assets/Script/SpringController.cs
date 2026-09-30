@@ -1,3 +1,4 @@
+using System;
 using UnityEditor.UI;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -9,8 +10,10 @@ public class SpringController : MonoBehaviour
     bool rebound;
     [SerializeField] float force;
     [SerializeField] float reboundForce;
-    [SerializeField] GameObject ball;
+    //[SerializeField] GameObject ball;
+    GameObject ball;
     bool isTouchingBall;
+    float pressTime;
     
     
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -20,6 +23,7 @@ public class SpringController : MonoBehaviour
         jump = InputSystem.actions.FindAction("Jump");
         rebound = false;
         isTouchingBall = false;
+        FindFirstObjectByType<GameRestart>().ChangeScore(0);
     }
 
     // Update is called once per frame
@@ -27,10 +31,12 @@ public class SpringController : MonoBehaviour
     {
         if (jump.IsPressed())
         {
-            rebound = false;
+            
             //myBody.AddForceY(-force * Time.deltaTime);
             if (transform.position.y > -49)
             {
+                pressTime += Time.deltaTime;
+                //Debug.Log("launching" + pressTime);
                 transform.Translate(Vector2.up * -force * Time.deltaTime);
             }
 
@@ -47,25 +53,40 @@ public class SpringController : MonoBehaviour
             rebound = true;
         }
 
+        
+    }
+
+    void FixedUpdate()
+    {
         if (rebound)
         {
             if (transform.position.y < -30) {
                 transform.Translate(Vector2.up * force * reboundForce*Time.deltaTime);
-                if(isTouchingBall)
-                ball.GetComponent<Rigidbody2D>().AddForceY(100f);
+                if (isTouchingBall)
+                {
+                    //Debug.Log(pressTime);
+                    ball.GetComponent<Rigidbody2D>().AddForceY(500f * pressTime);
+                    
+                }
+            }
+            else
+            {
+                rebound = false;
             }
         }
     }
+
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        if (collision.gameObject == ball)
+        if (collision.gameObject.CompareTag("Ball"))
         {
             isTouchingBall = true;
+            ball = collision.gameObject;
         }
     }
     private void OnCollisionExit2D(Collision2D collision)
     {
-        if (collision.gameObject == ball)
+        if (collision.gameObject.CompareTag("Ball"))
         {
             isTouchingBall = false;
         }
